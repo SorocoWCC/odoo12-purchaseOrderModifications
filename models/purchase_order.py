@@ -196,3 +196,39 @@ res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-
 + '------------------------ \n'+ '\"' + '| lp -d ' + str(impresora[0].name), shell=True)
 
 
+# Tomar Fotos   
+    @api.one
+    def action_take_picture(self):
+        # Solo incluye las lineas de pedido si la factura esta vacia
+        if len(self.order_line) == 0:
+            # Incluye linea de Chatarra
+            res= self.env['product.template'].search([['name', '=', 'Chatarra'], ['default_code', '=', 'CH']])
+            self.order_line.create({'product_id': str(res.id), 'price_unit':str(res.list_price), 'order_id' : self.id, 'name': '[CH] Chatarra','calcular': True, 'date_planned': str(fields.Date.today()), 'product_qty': 1, 'product_uom': str(res.uom_po_id.id)})
+
+            # Incluye Linea de basura
+            #res_basura= self.env['product.template'].search([('name', '=', 'Basura Chatarra')])
+            #self.order_line.create({'product_id': str(res_basura.id), 'price_unit':str(res_basura.list_price), 'order_id' : self.id, 'name': '[BC] Basura Chatarra', 'date_planned': str(fields.Date.today())})
+'''
+        foto_nombre=str(datetime.datetime.now().strftime("%d-%m-%Y_%H:%M:%S")) + "-" + str(self.name)
+        tomar_foto="pictures.sh " + foto_nombre
+        subprocess.call(str(tomar_foto), shell=True)
+
+        for line in self.order_line:
+            # No se adjuntan fotos a los productos especiales
+            if line.product_id.name != 'Basura Chatarra' and line.product_id.name != 'Prestamo' and line.product_id.name != 'Rebajo' :
+
+                if not line.imagen_lleno :
+                    file = open("/Documentos_Compartidos/Fotos/ODOO_Fotos/" + foto_nombre +".jpg", "rb")
+                    out = file.read()
+                    file.close()
+                    line.imagen_lleno = base64.b64encode(out)
+                    break
+                else:
+                    file = open("/Documentos_Compartidos/Fotos/ODOO_Fotos/" + foto_nombre +".jpg", "rb")
+                    out = file.read()
+                    file.close()
+                    line.imagen_vacio = base64.b64encode(out)
+                    break
+                    #IP de donde viene el request
+#print "------> 1" + str(request.httprequest.environ['REMOTE_ADDR'])
+'''
