@@ -10,6 +10,7 @@ import time
 import datetime
 import base64
 from openerp.http import request
+from ..dependencies.imManager import IM
 
 class purchase_order(models.Model):
     _name = 'purchase.order'
@@ -195,7 +196,6 @@ res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-
             'Ingreso: ' + str(self.peso_lleno) + ' kg \n' + 'Salida: ' + str(self.peso_vacio) + ' kg \n' + 'NETO: ' + str(self.peso_neto) + ' kg \n' 
 + '------------------------ \n'+ '\"' + '| lp -d ' + str(impresora[0].name), shell=True)
 
-
 # Tomar Fotos   
     @api.one
     def action_take_picture(self):
@@ -208,27 +208,22 @@ res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-
             # Incluye Linea de basura
             #res_basura= self.env['product.template'].search([('name', '=', 'Basura Chatarra')])
             #self.order_line.create({'product_id': str(res_basura.id), 'price_unit':str(res_basura.list_price), 'order_id' : self.id, 'name': '[BC] Basura Chatarra', 'date_planned': str(fields.Date.today())})
-'''
-        foto_nombre=str(datetime.datetime.now().strftime("%d-%m-%Y_%H:%M:%S")) + "-" + str(self.name)
-        tomar_foto="pictures.sh " + foto_nombre
-        subprocess.call(str(tomar_foto), shell=True)
+
 
         for line in self.order_line:
             # No se adjuntan fotos a los productos especiales
             if line.product_id.name != 'Basura Chatarra' and line.product_id.name != 'Prestamo' and line.product_id.name != 'Rebajo' :
 
                 if not line.imagen_lleno :
-                    file = open("/Documentos_Compartidos/Fotos/ODOO_Fotos/" + foto_nombre +".jpg", "rb")
-                    out = file.read()
-                    file.close()
-                    line.imagen_lleno = base64.b64encode(out)
+                    test = IM({"ip": "192.168.2.32", "user": "admin", "passw": "lacapri001"}, {"ip": "192.168.2.153", "user": "admin", "passw": "lacapri001"})
+                    res = test.get_image()
+                    print(res)
+                    line.imagen_lleno = base64.b64encode(res)
                     break
                 else:
-                    file = open("/Documentos_Compartidos/Fotos/ODOO_Fotos/" + foto_nombre +".jpg", "rb")
-                    out = file.read()
-                    file.close()
-                    line.imagen_vacio = base64.b64encode(out)
+                    test = IM({"ip": "192.168.2.32", "user": "admin", "passw": "lacapri001"}, {"ip": "192.168.2.153", "user": "admin", "passw": "lacapri001"})
+                    res = test.get_image()
+                    print(res)
+                    line.imagen_vacio = base64.b64encode(res)
                     break
-                    #IP de donde viene el request
-#print "------> 1" + str(request.httprequest.environ['REMOTE_ADDR'])
-'''
+

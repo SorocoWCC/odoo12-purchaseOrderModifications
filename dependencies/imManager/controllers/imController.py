@@ -1,5 +1,5 @@
-from imManager.models import ImageModel
-from imManager.models import WebModel
+from ..models import ImageModel
+from ..models import WebModel
 
 
 class ImageController:
