@@ -1,6 +1,5 @@
 from PIL import Image
 from io import BytesIO
-from io import StringIO
 import base64
 
 class ImageModel:
@@ -26,18 +25,14 @@ class ImageModel:
 
     @staticmethod
     def get_odoo_friendly_image_format(img):
-        buffer = StringIO()
-        img.save(buffer, format="JPEG")
-        return base64.b64encode(buffer.getvalue())
+        buffered = BytesIO()
+        img.save(buffered, format="JPEG")
+        return base64.b64encode(buffered.getvalue())
 
     @staticmethod
     def convert_bytes_to_image(image_request_bytes):
         try:
-
             return Image.open(BytesIO(image_request_bytes))
-
-
-
         except IOError as e:
             print("== Unable to convert Bytes to Image ==")
             print(e)
