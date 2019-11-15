@@ -5,9 +5,11 @@ from openerp.exceptions import ValidationError
 from odoo.exceptions import UserError
 from openerp.exceptions import Warning
 from openerp import models, fields, api
+from datetime import datetime
+from pytz import timezone 
+from datetime import timedelta  
 import subprocess
 import time
-import datetime
 import base64
 from openerp.http import request
 from ..dependencies.imManager import IM
@@ -29,28 +31,36 @@ class purchase_order(models.Model):
     peso_neto = fields.Float( string="Peso Neto")
     ficha = fields.Char (string="Ficha")
     placa_vehiculo= fields.Char (string="Placa")
-    pago = fields.Selection ([('regular','Regular'), ('muy','***MUY PAGA***'), ('caja_chica','Caja Chica')], string='Metodo de Pago', required=True)
+    pago = fields.Selection ([('regular','Regular'), ('muy','***MUY PAGA***'), ('caja_chica','Caja Chica')], string='Metodo de Pago', required=True, default='regular')
     pago_caja = fields.Selection ([('pendiente','Pendiente'),('pagado','Pagado')], string='Pago', default="pendiente", readonly=True, copy=False)
     #informacion = fields.Char(compute='_update_info', store=True, string="Avisos")
     informacion = fields.Char (string="Avisos")
     #prestamo_info = fields.Char(compute='_action_allowance', store=True, default=0, string="Prestamo" )
     #mantenimiento_info = fields.Char(compute='_action_allowance', store=True, string="Avisos")
 	#purchase_info_validation = fields.Char(compute='_action_purchase_creation', store=True, string="validacion")
+    imagen_vivo = IM({"ip": "192.168.2.153", "user": "admin", "passw": "lacapri001"}, {"ip": "192.168.2.113", "user": "admin", "passw": "lacapri001"})
 
     @api.multi
     def button_confirm(self):
         super(purchase_order, self).button_confirm()
 
+        order_line = self.order_line
+        if not order_line:
+            raise Warning ("Error: La orden de compra no contiene productos.")
+        
+        print (self.order_line)
         # Ingreso Automatico de Albaranes
-        albaran = self.env['stock.picking'].search([('state', '=', 'assigned'), ('origin', '=', self.name)])
-        print ("------>" + str(albaran))
+        stock_picking = self.env['stock.picking'].search([('state', '=', 'assigned'), ('origin', '=', self.name)])
 
-        for move in albaran.move_ids_without_package:
-            move.quantity_done = move.product_uom_qty
+        if stock_picking :
+            for move in stock_picking.move_ids_without_package:
+                move.quantity_done = move.product_uom_qty
 
-        albaran.button_validate()
+            stock_picking.button_validate()
 
-    
+        mensaje = "<p>Factura aprobada por: " + str(self.env.user.name) + " - " +datetime.now(timezone('America/Costa_Rica')).strftime("%Y-%m-%d %H:%M:%S") + "</p>"
+        self.message_post(body=mensaje, content_subtype='html')
+
     # Marcar la factura como pagada y la asocia con los cierres de caja
     @api.one
     def action_quotation_paid(self):
@@ -59,6 +69,20 @@ class purchase_order(models.Model):
         if str(self.state) == "cancel" :
             raise Warning ("Error: La factura fue cancelada")
         
+        # El usuario administrador puede pagar todas las facturas
+        if str(self.env.user.name) == "Administrator" :
+            self.cajero_id = str(self.env.user.name)
+            self.fecha_pago = fields.Datetime.now()
+            self.pago_caja = 'pagado'
+
+        # Valida si el usuario que creo la orden de compra es igual al cajero
+        if str(self.env.user.name) == str(self.user_id.name) :
+            raise Warning ("Error: El usuario que valida el pedido de compra es igual al cajero")
+        # Las facturas tipo *MUY PAGA* pueden ser pagadas por cualquier usuario
+        
+        mensaje = "<p>Factura pagada por: " + str(self.env.user.name) + " - " +datetime.now(timezone('America/Costa_Rica')).strftime("%Y-%m-%d %H:%M:%S") + "</p>"
+        self.message_post(body=mensaje, content_subtype='html')
+
         '''
         #Cajeros    
         cajero_cierre_regular = self.env['cierre'].search([('cajero', '=', str(self.env.user.name)), ('state', '=', 'new'), ('tipo', '=', 'regular')])
@@ -196,7 +220,7 @@ res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-
             'Ingreso: ' + str(self.peso_lleno) + ' kg \n' + 'Salida: ' + str(self.peso_vacio) + ' kg \n' + 'NETO: ' + str(self.peso_neto) + ' kg \n' 
 + '------------------------ \n'+ '\"' + '| lp -d ' + str(impresora[0].name), shell=True)
 
-# Tomar Fotos   
+    # Tomar Fotos   
     @api.one
     def action_take_picture(self):
         # Solo incluye las lineas de pedido si la factura esta vacia
@@ -209,21 +233,19 @@ res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-
             #res_basura= self.env['product.template'].search([('name', '=', 'Basura Chatarra')])
             #self.order_line.create({'product_id': str(res_basura.id), 'price_unit':str(res_basura.list_price), 'order_id' : self.id, 'name': '[BC] Basura Chatarra', 'date_planned': str(fields.Date.today())})
 
-
         for line in self.order_line:
             # No se adjuntan fotos a los productos especiales
             if line.product_id.name != 'Basura Chatarra' and line.product_id.name != 'Prestamo' and line.product_id.name != 'Rebajo' :
+                try :
+                    res = self.imagen_vivo.get_image()
 
-                if not line.imagen_lleno :
-                    test = IM({"ip": "192.168.2.32", "user": "admin", "passw": "lacapri001"}, {"ip": "192.168.2.153", "user": "admin", "passw": "lacapri001"})
-                    res = test.get_image()
-                    print(res)
-                    line.imagen_lleno = base64.b64encode(res)
-                    break
-                else:
-                    test = IM({"ip": "192.168.2.32", "user": "admin", "passw": "lacapri001"}, {"ip": "192.168.2.153", "user": "admin", "passw": "lacapri001"})
-                    res = test.get_image()
-                    print(res)
-                    line.imagen_vacio = base64.b64encode(res)
-                    break
+                    if not line.imagen_lleno :
+                        line.imagen_lleno = res
+                        break
+                    else:
+                        line.imagen_vacio = res
+                        break
+                except:    
+                    self.env.user.notify_danger(message='Error al obtener las imagenes.')
+
 

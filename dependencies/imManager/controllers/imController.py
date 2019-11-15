@@ -19,7 +19,6 @@ class ImageController:
     def get_web_image(self, cam):
         image = False;
         request_bytes = self.webM.get_request(cam, True)
-        print(request_bytes)
 
         if request_bytes:
             image = self.imageM.convert_bytes_to_image(request_bytes)
@@ -27,9 +26,8 @@ class ImageController:
         return image
 
     def set_camera (self, cam):
-        test = self.get_camera_url(cam["ip"], cam["user"], cam["passw"])
-        print(test)
-        return test
+        cam = self.get_camera_url(cam["ip"], cam["user"], cam["passw"])
+        return cam
 
     @staticmethod
     def get_camera_url(ip, user, passw, secure=False):

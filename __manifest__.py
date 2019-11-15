@@ -23,12 +23,14 @@
 
     # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
-        'views/views.xml',
+        'purchase_order_modifications_report.xml',
+        #'views/views.xml',
         'views/templates.xml',
         'views/purchase_order.xml',
         'views/product.xml',
-        'views/printer.xml'
+        'views/printer.xml',
+        'views/report_tiquete_compra.xml',
+        'views/report_factura_de_compra_fotos.xml'
 
     ],
     # only loaded in demonstration mode

@@ -1,105 +1,99 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-   <data>
-
+  <data>
+    <template id="assets_backend" inherit_id="web.assets_backend" name="custom assets">
+      <xpath expr="." position="inside">
+        <link href="/odoo12-purchaseOrderModifications/static/src/css/styles.css" rel="stylesheet"/>
+      </xpath>
+    </template>
     <!-- Vista de formulario - Heredada - Invoice -->
-    <record model="ir.ui.view" id="sm_purchase_order">
+    <record id="sm_purchase_order" model="ir.ui.view">
       <field name="name">purchase.purchase_order_form_inherit</field>
       <field name="model">purchase.order</field>
       <field name="inherit_id" ref="purchase.purchase_order_form"/>
       <field name="arch" type="xml">
-
-        <field name="partner_id" position="after" colspan='2'>
-            <field name="peso_lleno"  attrs="{'readonly': ['|', ('state','!=', 'draft')]}"/>
-            <field name="peso_vacio" attrs="{'readonly': ['|', ('state','!=', 'draft')]}"/> 
-            <field name="peso_neto" attrs="{'readonly': ['|', ('state','!=', 'draft')]}" /> 
-            <field name="imagen_pago" widget='image' height="50" />
-            <field name="pago_caja"/>
+        <field colspan="2" name="partner_id" position="after">
+          <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="peso_lleno"/>
+          <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="peso_vacio"/>
+          <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="peso_neto"/>
         </field>
-
-          <field name="date_order" position="before" >
-            <field name="ficha"  attrs="{'readonly': ['|', ('state','!=', 'draft')]}"/>
-            <field name="placa_vehiculo" attrs="{'readonly': ['|', ('state','!=', 'draft')]}"/> 
-            <field name="pago" attrs="{'readonly': ['|', ('state','!=', 'draft')]}" />
+        <field name="date_order" position="before">
+          <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="ficha"/>
+          <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="placa_vehiculo"/>
+          <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="pago"/>
+          <field attrs="{'invisible': [('state','=','draft')], 'readonly': [('pago_caja','=', 'pagado')]}" height="150" name="imagen_pago" widget="image"/>
         </field>
-
-        <field name="product_id" position="after" >
-            <field name="calcular"  attrs="{'readonly': ['|', ('state','!=', 'draft')]}"/>
-            <field name="imagen_lleno"  attrs="{'readonly': ['|', ('state','!=', 'draft')]}"/>
-            <field name="imagen_vacio"  attrs="{'readonly': ['|', ('state','!=', 'draft')]}"/>
+        <field name="product_id" position="after">
+          <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="calcular"/>
+          <field name="imagen_lleno" widget="image"/>
+          <field name="imagen_vacio" widget="image"/>
         </field>
-
-
-        <!-- Boton para pagar la factura --> 
+        <!-- Boton para pagar la factura -->
         <button name="button_cancel" position="before">
-          <button name="action_quotation_paid" string="Pagar" type="object"
-               class="oe_highlight" />
+          <button attrs="{'invisible': [ '|',  ('state','!=', 'purchase'),('pago_caja','=', 'pagado')]}" class="oe_highlight" name="action_quotation_paid" string="Pagar" type="object"/>
+        </button>
+        <!-- Boton para Cancelar la factura -->
+        <button name="button_cancel" position="attributes">
+          <attribute name="invisible">True</attribute>
         </button> 
-
+        <button name="button_cancel" position="before">
+          <button attrs="{'invisible': [ ('pago_caja','=', 'pagado')]}" name="button_cancel" string="Cancelar" type="object"/>
+        </button>
         <!-- Botones para calcular peso y tomar fotos -->
         <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
-          <button name="action_take_picture" type="object" class="oe_inline oe_stat_button" icon="fa-camera" string="Tomar Fotos" />
-          <button name="action_calcular_peso" type="object" class="oe_inline oe_stat_button" icon="fa-calculator" string="Calcular"/>
+          <button class="oe_inline oe_stat_button" icon="fa-camera" name="action_take_picture" string="Tomar Fotos" type="object"/>
+          <button class="oe_inline oe_stat_button" icon="fa-calculator" name="action_calcular_peso" string="Calcular" type="object"/>
         </xpath>
-  
-        <notebook position="inside" >
-          <page string="Certificado" >
+        <!-- Oculta fecha de entrega en las lineas de productos -->
+        <field name="date_planned" position="attributes">
+          <attribute name="invisible">True</attribute>
+        </field>
+        <notebook position="inside">
+          <page string="Certificado">
             <group>
-              <field  name="cliente"/>
-              <field  name="material_procesado"/>
-              <field  name="cantidad"/>
-              <field  name="periodo"/>
-              <field  name="co2"/>
+              <field name="cliente"/>
+              <field name="material_procesado"/>
+              <field name="cantidad"/>
+              <field name="periodo"/>
+              <field name="co2"/>
             </group>
           </page>
-          <page string="Otros" >
+          <page string="Otros">
             <group>
-              <field  name="cajero_id"/>
-              <field  name="fecha_pago"/>
-              <field  name="pago_caja"/>
+              <field name="cajero_id"/>
+              <field name="fecha_pago"/>
+              <field name="pago_caja"/>
             </group>
           </page>
         </notebook>
       </field>
     </record>
-
-<!-- Vista de arbol - Heredada - Invoice -->
-<record model="ir.ui.view" id="purchase_view_tree_form">
-    <field name="name">purchase_view_order_tree_heredada</field>
-    <field name="model">purchase.order</field>
-    <field name="inherit_id" ref="purchase.purchase_order_tree"/>
-    <field name="arch" type="xml">
-
-  <field name="amount_total" position="before">
-        <field  name="informacion" />
+    <!-- Vista de arbol - Heredada - Invoice -->
+    <record id="purchase_view_tree_form" model="ir.ui.view">
+      <field name="name">purchase_view_order_tree_heredada</field>
+      <field name="model">purchase.order</field>
+      <field name="inherit_id" ref="purchase.purchase_order_tree"/>
+      <field name="arch" type="xml">
+        <field name="amount_total" position="before">
+          <field name="informacion"/>
         </field>
-
-  <field name="date_order" position="after">
-        <field  name="fecha_pago"/>
+        <field name="date_order" position="after">
+          <field name="fecha_pago"/>
         </field>
-
-    <field name="state" position="before">
-     <field  name="pago_caja" />
-     </field>
-
-    <field name="date_order" position="after">
-     <field  name="ficha" />
-     <field  name="placa_vehiculo" />
-     </field>
-
-
-  <field name="amount_untaxed" position="attributes">
-  <attribute name="invisible">True</attribute>
-  </field>
-
-  <field name="origin" position="attributes">
-  <attribute name="invisible">True</attribute>
-  </field>
-
+        <field name="state" position="before">
+          <field name="pago_caja"/>
         </field>
-  
-</record>
-
-
+        <field name="date_order" position="after">
+          <field name="ficha"/>
+          <field name="placa_vehiculo"/>
+        </field>
+        <field name="amount_untaxed" position="attributes">
+          <attribute name="invisible">True</attribute>
+        </field>
+        <field name="origin" position="attributes">
+          <attribute name="invisible">True</attribute>
+        </field>
+      </field>
+    </record>
   </data>
 </odoo>
