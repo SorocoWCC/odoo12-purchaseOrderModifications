@@ -38,7 +38,7 @@ class purchase_order(models.Model):
     #prestamo_info = fields.Char(compute='_action_allowance', store=True, default=0, string="Prestamo" )
     #mantenimiento_info = fields.Char(compute='_action_allowance', store=True, string="Avisos")
 	#purchase_info_validation = fields.Char(compute='_action_purchase_creation', store=True, string="validacion")
-    imagen_vivo = IM({"ip": "192.168.2.153", "user": "admin", "passw": "lacapri001"}, {"ip": "192.168.2.113", "user": "admin", "passw": "lacapri001"})
+    #imagen_vivo = IM({"ip": "192.168.2.114", "user": "admin", "passw": "lacapri001"}, {"ip": "192.168.2.152", "user": "admin", "passw": "lacapri001"})
 
     @api.multi
     def button_confirm(self):
@@ -234,18 +234,24 @@ res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-
             #self.order_line.create({'product_id': str(res_basura.id), 'price_unit':str(res_basura.list_price), 'order_id' : self.id, 'name': '[BC] Basura Chatarra', 'date_planned': str(fields.Date.today())})
 
         for line in self.order_line:
+            camara_romana = self.env['camara'].search([['tipo', '=', 'romana']])
+            camara_indicador = self.env['camara'].search([['tipo', '=', 'indicador']])
+            print("------>" + str(camara_indicador) + str(camara_romana))
+            imagen_vivo = IM({"ip": camara_romana[0].ip, "user": camara_romana[0].usuario, "passw": camara_romana[0].contrasena}, {"ip": camara_indicador[0].ip, "user": camara_indicador[0].usuario, "passw": camara_indicador[0].contrasena})
+            
             # No se adjuntan fotos a los productos especiales
             if line.product_id.name != 'Basura Chatarra' and line.product_id.name != 'Prestamo' and line.product_id.name != 'Rebajo' :
                 try :
-                    res = self.imagen_vivo.get_image()
+                    res = imagen_vivo.get_image()
 
                     if not line.imagen_lleno :
                         line.imagen_lleno = res
                         break
-                    else:
+                    elif not line.imagen_vacio :
                         line.imagen_vacio = res
                         break
                 except:    
                     self.env.user.notify_danger(message='Error al obtener las imagenes.')
+
 
 

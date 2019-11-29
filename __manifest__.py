@@ -29,6 +29,7 @@
         'views/purchase_order.xml',
         'views/product.xml',
         'views/printer.xml',
+        'views/camera.xml',
         'views/report_tiquete_compra.xml',
         'views/report_factura_de_compra_fotos.xml'
 
