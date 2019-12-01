@@ -35,10 +35,10 @@ class purchase_order(models.Model):
     pago_caja = fields.Selection ([('pendiente','Pendiente'),('pagado','Pagado')], string='Pago', default="pendiente", readonly=True, copy=False)
     #informacion = fields.Char(compute='_update_info', store=True, string="Avisos")
     informacion = fields.Char (string="Avisos")
-    #prestamo_info = fields.Char(compute='_action_allowance', store=True, default=0, string="Prestamo" )
+    partner_info = fields.Char(compute='_action_partner_info' )
     #mantenimiento_info = fields.Char(compute='_action_allowance', store=True, string="Avisos")
 	#purchase_info_validation = fields.Char(compute='_action_purchase_creation', store=True, string="validacion")
-    #imagen_vivo = IM({"ip": "192.168.2.114", "user": "admin", "passw": "lacapri001"}, {"ip": "192.168.2.152", "user": "admin", "passw": "lacapri001"})
+   
 
     @api.multi
     def button_confirm(self):
@@ -236,7 +236,6 @@ res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-
         for line in self.order_line:
             camara_romana = self.env['camara'].search([['tipo', '=', 'romana']])
             camara_indicador = self.env['camara'].search([['tipo', '=', 'indicador']])
-            print("------>" + str(camara_indicador) + str(camara_romana))
             imagen_vivo = IM({"ip": camara_romana[0].ip, "user": camara_romana[0].usuario, "passw": camara_romana[0].contrasena}, {"ip": camara_indicador[0].ip, "user": camara_indicador[0].usuario, "passw": camara_indicador[0].contrasena})
             
             # No se adjuntan fotos a los productos especiales
@@ -253,5 +252,7 @@ res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-
                 except:    
                     self.env.user.notify_danger(message='Error al obtener las imagenes.')
 
-
-
+# Captura la informacion relevante del cliente : Prestamos, Mantenimiento y notas  
+    @api.onchange('partner_id')
+    def _action_partner_info(self):
+        self.notes = self.partner_id.comment
