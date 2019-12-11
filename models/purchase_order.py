@@ -18,9 +18,7 @@ class purchase_order(models.Model):
     _name = 'purchase.order'
     _inherit = 'purchase.order'
     state = fields.Selection(selection_add=[('quotation_paid', "Pagado")])
-    imagen_pago = fields.Binary(string="Información de pago")
-    fecha_pago = fields.Datetime(string="Fecha Pago", readonly=True, copy=False)
-    cajero_id = fields.Char(string="Cajero", readonly=True, copy=False)
+    #cajero_id = fields.Char(string="Cajero", readonly=True, copy=False)
     cliente = fields.Char(string="Cliente")
     cantidad = fields.Integer(string="Cantidad (KG)", default=1)
     material_procesado = fields.Char(string="Material Procesado", default="Desechos Reciclables")
@@ -31,9 +29,6 @@ class purchase_order(models.Model):
     peso_neto = fields.Float( string="Peso Neto")
     ficha = fields.Char (string="Ficha")
     placa_vehiculo= fields.Char (string="Placa")
-    pago = fields.Selection ([('regular','Regular'), ('muy','***MUY PAGA***'), ('caja_chica','Caja Chica')], string='Metodo de Pago', required=True, default='regular')
-    pago_caja = fields.Selection ([('pendiente','Pendiente'),('pagado','Pagado')], string='Pago', default="pendiente", readonly=True, copy=False)
-    #informacion = fields.Char(compute='_update_info', store=True, string="Avisos")
     informacion = fields.Char (string="Avisos")
     partner_info = fields.Char(compute='_action_partner_info' )
     #mantenimiento_info = fields.Char(compute='_action_allowance', store=True, string="Avisos")
@@ -48,124 +43,9 @@ class purchase_order(models.Model):
         if not order_line:
             raise Warning ("Error: La orden de compra no contiene productos.")
         
-        print (self.order_line)
-        # Ingreso Automatico de Albaranes
-        stock_picking = self.env['stock.picking'].search([('state', '=', 'assigned'), ('origin', '=', self.name)])
-
-        if stock_picking :
-            for move in stock_picking.move_ids_without_package:
-                move.quantity_done = move.product_uom_qty
-
-            stock_picking.button_validate()
-
+        self.user_id = self.env.user
         mensaje = "<p>Factura aprobada por: " + str(self.env.user.name) + " - " +datetime.now(timezone('America/Costa_Rica')).strftime("%Y-%m-%d %H:%M:%S") + "</p>"
         self.message_post(body=mensaje, content_subtype='html')
-
-    # Marcar la factura como pagada y la asocia con los cierres de caja
-    @api.one
-    def action_quotation_paid(self):
-
-        # Valida si la factura fue cancelada antes de pagarla
-        if str(self.state) == "cancel" :
-            raise Warning ("Error: La factura fue cancelada")
-        
-        # El usuario administrador puede pagar todas las facturas
-        if str(self.env.user.name) == "Administrator" :
-            self.cajero_id = str(self.env.user.name)
-            self.fecha_pago = fields.Datetime.now()
-            self.pago_caja = 'pagado'
-
-        # Valida si el usuario que creo la orden de compra es igual al cajero
-        if str(self.env.user.name) == str(self.user_id.name) :
-            raise Warning ("Error: El usuario que valida el pedido de compra es igual al cajero")
-        # Las facturas tipo *MUY PAGA* pueden ser pagadas por cualquier usuario
-        
-        mensaje = "<p>Factura pagada por: " + str(self.env.user.name) + " - " +datetime.now(timezone('America/Costa_Rica')).strftime("%Y-%m-%d %H:%M:%S") + "</p>"
-        self.message_post(body=mensaje, content_subtype='html')
-
-        '''
-        #Cajeros    
-        cajero_cierre_regular = self.env['cierre'].search([('cajero', '=', str(self.env.user.name)), ('state', '=', 'new'), ('tipo', '=', 'regular')])
-        cajero_cierre_caja_chica = self.env['cierre'].search([('cajero', '=', str(self.env.user.name)), ('state', '=', 'new'), ('tipo', '=', 'caja_chica')])
-        # Cierres
-        cierre_regular = self.env['cierre'].search([('state', '=', 'new'), ('tipo', '=', 'regular')])
-        cierre_caja_chica = self.env['cierre'].search([('state', '=', 'new'), ('tipo', '=', 'caja_chica')])
-
-        # El usuario administrador puede pagar todas las facturas
-        if str(self.env.user.name) == "Administrator" :
-            self.cajero_id = str(self.env.user.name)
-            self.fecha_pago = fields.Datetime.now()
-            self.pago_caja = 'pagado'
-            self.cierre_id = cierre_regular.id
-            self.cierre_id_caja_chica = cajero_cierre_caja_chica.id
-        else:
-            # Valida si el usuario que creo la orden de compra es igual al cajero
-            if str(self.env.user.name) == str(self.validator.name) :
-                raise Warning ("Error: El usuario que valida el pedido de compra es igual al cajero")
-
-            # Valida si hay cierres de caja disponibles para asociarlos
-            if cierre_regular.id == False :
-                raise Warning ("Error: Proceda a crear un cierre de caja tipo Regular.")
-            if str(self.pago) == "caja_chica":
-                if cierre_caja_chica.id == False:
-                    raise Warning ("Error: Proceda a crear un cierre de caja tipo Caja Chica.")     
-            #===============================================
-            # Valida facturas tipo Caja Chica
-            if str(self.pago) == "caja_chica" :
-
-                if str(cajero_cierre_caja_chica.cajero) == str(self.env.user.name) :
-                    self.cajero_id = str(self.env.user.name)
-                    self.fecha_pago = fields.Datetime.now()
-                    self.pago_caja = 'pagado'
-                    self.cierre_id = cierre_regular.id
-                    self.cierre_id_caja_chica = cajero_cierre_caja_chica.id
-                else:
-                    raise Warning ("Usuario no autorizado para pagar facturas") 
-            #===============================================
-            # Valida facturas tipo Regular
-            elif str(self.pago) == "regular" :
-
-                # Valida si el usuario que creo la orden de compra es igual al cajero
-                if str(self.env.user.name) == str(self.validator.name) :
-                    raise Warning ("Error: El usuario que valida el pedido de compra es igual al cajero")
-                
-                # verifica que se adjunte la imagen
-                if str(self.imagen_pago) == "None":
-                    raise Warning ("Por Favor adjunte la imagen de pago.")
-
-                if str(cajero_cierre_regular.cajero) == str(self.env.user.name) :
-                    self.cajero_id = str(self.env.user.name)
-                    self.fecha_pago = fields.Datetime.now()
-                    self.pago_caja = 'pagado'
-                    self.cierre_id = cierre_regular.id
-                    self.cierre_id_caja_regular = cajero_cierre_regular.id
-                else:
-                    raise Warning ("Usuario no autorizado para pagar facturas")
-            #===============================================
-            # Valida las facturas tipo Muy Paga
-            elif str(self.pago) == "muy" :
-                self.cajero_id = str(self.env.user.name)
-                self.fecha_pago = fields.Datetime.now()
-                self.pago_caja = 'pagado'
-                # Asocia el Nombre del cajera
-                self.cierre_id = cajero_cierre_regular.id
-                # Asocia el cierre de caja
-                self.cierre_id_caja_regular = cajero_cierre_regular.id
-            
-            else:
-                raise Warning ("Usuario no autorizado para pagar facturas") 
-                    
-            if str(self.informacion) == "Listo Para Revisar | ***MUY PAGA***":
-                self.informacion = "***MUY PAGA***"
-
-            # Crear directament un Abono al prestamo
-            res= self.env['cliente.allowance'].search([('name', '=', str(self.partner_id.name)), ('state', '=', 'new')])
-            print str(res)
-            for line in self.order_line:
-                if line.product_id.name == "Prestamo" and len(res) > 0:
-res[0].abono_ids.create({'name':str(res[0].name),'libro_id':res[0].id, 'monto':-(line.price_subtotal), 'notas': str(self.name)})
-`
-'''
 
 # Calcular la cantidad del producto a facturar
     @api.one

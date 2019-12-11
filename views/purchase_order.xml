@@ -20,24 +20,20 @@
         <field name="date_order" position="before">
           <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="ficha"/>
           <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="placa_vehiculo"/>
-          <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="pago"/>
-          <field attrs="{'invisible': [('state','=','draft')], 'readonly': [('pago_caja','=', 'pagado')]}" height="150" name="imagen_pago" widget="image"/>
+          <!--<field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="pago"/><field attrs="{'invisible': [('state','=','draft')], 'readonly': [('pago_caja','=', 'pagado')]}" height="150" name="imagen_pago" widget="image"/>-->
         </field>
         <field name="product_id" position="after">
           <field attrs="{'readonly': ['|', ('state','!=', 'draft')]}" name="calcular"/>
           <field name="imagen_lleno" widget="image"/>
           <field name="imagen_vacio" widget="image"/>
         </field>
-        <!-- Boton para pagar la factura -->
-        <button name="button_cancel" position="before">
-          <button attrs="{'invisible': [ '|',  ('state','!=', 'purchase'),('pago_caja','=', 'pagado')]}" class="oe_highlight" name="action_quotation_paid" string="Pagar" type="object"/>
-        </button>
-        <!-- Boton para Cancelar la factura -->
-        <button name="button_cancel" position="attributes">
+        <!-- Boton para pagar la factura 
+        <button name="button_cancel" position="before"><button attrs="{'invisible': [ '|',  ('state','!=', 'purchase'),('pago_caja','=', 'pagado')]}" class="oe_highlight" name="action_quotation_paid" string="Pagar" type="object"/></button>-->
+        <button name="action_view_invoice" position="attributes">
           <attribute name="invisible">True</attribute>
-        </button> 
-        <button name="button_cancel" position="before">
-          <button attrs="{'invisible': [ ('pago_caja','=', 'pagado')]}" name="button_cancel" string="Cancelar" type="object"/>
+        </button>
+        <button name="action_view_invoice" position="attributes">
+          <attribute name="invisible">True</attribute>
         </button>
         <!-- Botones para calcular peso y tomar fotos -->
         <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
@@ -47,6 +43,10 @@
         <!-- Oculta fecha de entrega en las lineas de productos -->
         <field name="date_planned" position="attributes">
           <attribute name="invisible">True</attribute>
+        </field>
+        <!-- Solo lectura usuario que apruba la factura -->
+        <field name="user_id" position="attributes">
+          <attribute name="readonly">True</attribute>
         </field>
         <notebook position="inside">
           <page string="Certificado">
@@ -58,13 +58,6 @@
               <field name="co2"/>
             </group>
           </page>
-          <page string="Otros">
-            <group>
-              <field name="cajero_id"/>
-              <field name="fecha_pago"/>
-              <field name="pago_caja"/>
-            </group>
-          </page>
         </notebook>
       </field>
     </record>
@@ -74,14 +67,10 @@
       <field name="model">purchase.order</field>
       <field name="inherit_id" ref="purchase.purchase_order_tree"/>
       <field name="arch" type="xml">
-        <field name="amount_total" position="before">
-          <field name="informacion"/>
-        </field>
-        <field name="date_order" position="after">
-          <field name="fecha_pago"/>
-        </field>
-        <field name="state" position="before">
-          <field name="pago_caja"/>
+        <!--
+        <field name="amount_total" position="before"><field name="informacion"/></field><field name="date_order" position="after"><field name="fecha_pago"/></field><field name="state" position="before"><field name="pago_caja"/></field>-->
+        <field name="date_planned" position="attributes">
+          <attribute name="invisible">True</attribute>
         </field>
         <field name="date_order" position="after">
           <field name="ficha"/>
