@@ -12,7 +12,6 @@
           <page string="Configuración">
             <group>
               <field  name="sumar_validacion" />
-              <field  name="precio_venta_informe" />
               <field  name="calcular" />
             </group>           
           </page>
