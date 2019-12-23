@@ -116,9 +116,6 @@ class purchase_order(models.Model):
         for line in self.order_line:
             camara_romana = self.env['camara'].search([['tipo', '=', 'romana']])
             camara_indicador = self.env['camara'].search([['tipo', '=', 'indicador']])
-            print(camara_romana[0].ip)
-            print(camara_romana[0].usuario)
-            print(camara_romana[0].contrasena)
             imagen_vivo = IM({"ip": camara_romana[0].ip, "user": camara_romana[0].usuario, "passwd": camara_romana[0].contrasena}, {"ip": camara_indicador[0].ip, "user": camara_indicador[0].usuario, "passwd": camara_indicador[0].contrasena})
             
             # No se adjuntan fotos a los productos especiales
