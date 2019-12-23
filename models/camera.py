@@ -8,6 +8,6 @@ from openerp.exceptions import Warning
 class camara(models.Model):
     _name = 'camara'
     ip = fields.Char(string= 'Dirección IP')
-    tipo= fields.Selection ([('romana', 'Romana'), ('indicador','Indicador') ], string='Tipo')
+    tipo= fields.Selection ([('romana', 'Romana'), ('indicador','Indicador'), ('caja','Caja') ], string='Tipo')
     usuario = fields.Char(string= 'Usuario')
     contrasena = fields.Char(string= 'Contrasena')

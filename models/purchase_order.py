@@ -12,7 +12,7 @@ import subprocess
 import time
 import base64
 from openerp.http import request
-from ..dependencies.imManager import IM
+from odoo_pictures import IM
 
 class purchase_order(models.Model):
     _name = 'purchase.order'
@@ -116,20 +116,24 @@ class purchase_order(models.Model):
         for line in self.order_line:
             camara_romana = self.env['camara'].search([['tipo', '=', 'romana']])
             camara_indicador = self.env['camara'].search([['tipo', '=', 'indicador']])
-            imagen_vivo = IM({"ip": camara_romana[0].ip, "user": camara_romana[0].usuario, "passw": camara_romana[0].contrasena}, {"ip": camara_indicador[0].ip, "user": camara_indicador[0].usuario, "passw": camara_indicador[0].contrasena})
+            print(camara_romana[0].ip)
+            print(camara_romana[0].usuario)
+            print(camara_romana[0].contrasena)
+            imagen_vivo = IM({"ip": camara_romana[0].ip, "user": camara_romana[0].usuario, "passwd": camara_romana[0].contrasena}, {"ip": camara_indicador[0].ip, "user": camara_indicador[0].usuario, "passwd": camara_indicador[0].contrasena})
             
             # No se adjuntan fotos a los productos especiales
             if line.product_id.name != 'Basura Chatarra' and line.product_id.name != 'Prestamo' and line.product_id.name != 'Rebajo' :
-                try :
-                    res = imagen_vivo.get_image()
 
+                res = imagen_vivo.get_image()
+               
+                try:
                     if not line.imagen_lleno :
-                        line.imagen_lleno = res
+                        line.imagen_lleno = res["image"]
                         break
                     elif not line.imagen_vacio :
-                        line.imagen_vacio = res
+                        line.imagen_vacio = res["image"]
                         break
-                except:    
+                except:
                     self.env.user.notify_danger(message='Error al obtener las imagenes.')
 
 # Captura la informacion relevante del cliente : Prestamos, Mantenimiento y notas  
